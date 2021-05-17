@@ -1,0 +1,302 @@
+---
+title: "Intro_CML_workshop"
+author: "Karla DiazOrdaz"
+date: "17/05/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+The aim of this short tutorial is to demonstrate how  
+to implement causal machine learning estimators in practice.
+
+We will focus on the average treatment effect (ATE)
+ATE = E(Y1)-E(Y0)
+ 
+We will see the naive plug-in estimator (i.e. plug-in G-computation with data-adaptive  estimates), the AIPW (corresponding to one-step and estimating equations) estimator and targeted maximum likelihood estimation (TMLE) 
+
+We do this using the Super Learner in R (for the data adaptive models).
+
+We begin by loading the necessary libraries. 
+
+```{r, include = TRUE, echo = TRUE}
+#' Install packages and load them  ##########
+#install.packages("SuperLearner")
+#install.packages("xgboost")
+#install.packages("tmle")
+#install.packages("devtools")
+#library(devtools)
+#install_github("ehkennedy/npcausal")
+library(npcausal)
+library(boot)
+library(MASS) 
+library(SuperLearner)
+library(survey)
+library(npcausal)
+library(tmle)
+```
+
+The aim of this short tutorial is to demonstrate how  
+to implement causal machine learning estimators in practice.
+
+We will focus on the average treatment effect (ATE)
+ATE = E(Y1)-E(Y0)
+ 
+We will see the naive plug-in estimator (i.e. plug-in G-computation with data-adaptive  estimates), the AIPW (corresponding to one-step and estimating equations) estimator and targeted maximum likelihood estimation (TMLE) 
+
+We do this using the Super Learner in R (for the data adaptive models).
+
+ We will use simulated data: where the Binary outcome is Y
+ and treatment A, 
+ sample size n=1000 
+ dim W =4 as variables we adjust to control for confounding.
+ The following code generates the data
+ 
+ ```{r, include = TRUE, echo = TRUE}
+
+ set.seed(129)
+ n=1000
+w1 <- rbinom(n, size=1, prob=0.5)
+w2 <- rbinom(n, size=1, prob=0.65)
+w3 <- round(runif(n, min=0, max=4), digits=3)
+w4 <- round(runif(n, min=0, max=5), digits=3)
+A <- rbinom(n, size=1,
+            prob= plogis(-0.4 + 0.2*w2 + 0.15*w3 + 0.2*w4 + 0.15*w2*w4))
+Y <- rbinom(n, size=1,
+            prob= plogis(-1 + A -0.1*w1 + 0.3*w2 + 0.25*w3 + 0.2*w4 + 0.15*w2*w4))
+Y.1 <-  plogis( -0.1*w1 + 0.3*w2 + 0.25*w3 + 0.2*w4 + 0.15*w2*w4)
+Y.0 <-  plogis(-1  -0.1*w1 + 0.3*w2 + 0.25*w3 + 0.2*w4 + 0.15*w2*w4)
+trueATE<-mean(Y.1)-mean(Y.0)
+trueATE
+#Create data frame with baseline covariates
+W<-data.frame(cbind(w1,w2,w3,w4))
+data<-data.frame(cbind(W,A,Y))
+```
+
+## Super Learner 
+First, check which learners have been integrated into the SuperLearner package.  We can use any of these when we run the SuperLearner:
+
+```{r, include = TRUE, echo = TRUE}
+library(SuperLearner)
+listWrappers(what = "SL")
+
+```
+
+
+Here we will use the following learners (as specified in the lecture)
+```{r, include = TRUE, echo = TRUE}
+SL.library<- c("SL.glm", "SL.glm.interaction", "SL.xgboost", "SL.glmnet", "SL.ranger")
+
+```
+
+These should ideally be tested with multiple hyperparameter settings for each algorithm which can be tuned using CV.
+
+
+In the interest of time, now we only use the defaults. Make sure you check which parameters are this for each learner, by typing its name and checking the default options pre-programmed in the SL wrapper, for example, for random forests using the ranger implementation
+
+```{r, include = TRUE, echo = TRUE}
+SL.ranger
+
+```
+
+We see that the number of trees is 500 and the number of variables to consider for each tree is the sqrt of the number of total independent variables (sqrt (dimW)) rounded down to the next lower interger.  
+
+## SL for the outcome regression (naive plug-in g-computation)
+
+```{r, include = TRUE, echo = TRUE}
+SL.outcome<- SuperLearner(Y=data$Y, X=subset(data, select=-Y),
+                                     SL.library=SL.library, family="binomial")
+```
+
+#' You can look at the Super learner object, to see how the alogorithms are weighted 
+```{r, include = TRUE, echo = TRUE}
+SL.outcome
+```
+
+Now we get the prediction for the actual exposure level received and the two potential outcomes for everyone, based on the trained SL
+```{r, include = TRUE, echo = TRUE}
+SL.outcome.obs<- predict(SL.outcome, newdata=subset(data, select=-Y))$pred
+# predict the PO Y^1
+SL.outcome.exp<- predict(SL.outcome, newdata=data.frame(cbind(W,A=rep(1,length(A)))))$pred
+# predict the PO Y^0
+SL.outcome.unexp<- predict(SL.outcome, newdata=data.frame(cbind(W,A=rep(0,length(A)))))$pred
+```
+
+## SL g-computation
+We can now use these two predictions to get the plug-in g-somputation 
+
+```{r, include = TRUE, echo = TRUE}
+SL.plugin.gcomp<-mean(SL.outcome.exp-SL.outcome.unexp)
+SL.plugin.gcomp
+```
+
+Warning:  no way of doing inference, bootstrap not valid when using ML
+
+
+
+ We collate the SL fits, because we're going to use them later
+
+```{r, include = TRUE, echo = TRUE}
+Q=cbind(SL.outcome.obs, SL.outcome.unexp,SL.outcome.exp)
+colnames(Q)<-c("QAW","Q0W","Q1W")
+```
+
+##   plug-in AIPW 
+
+Now, we will use the outcome predictions and the propensity score predictions to estimate an AIPW with SL plog-ins.
+
+First the SL for the prop score 
+
+```{r, include = TRUE, echo = TRUE}
+SL.g<- SuperLearner(Y=data$A, X=subset(data, select=-c(A,Y)),
+                    SL.library=SL.library, family="binomial")
+```
+#' You can look at the Super learner object, to see how the alogorithms are weighted
+
+```{r, include = TRUE, echo = TRUE}
+SL.g
+```
+
+We see that here all the learners have non-zero coefficients for the SL. 
+
+Now, get the probability of getting the exposure
+
+```{r, include = TRUE, echo = TRUE}
+g1W <- SL.g$SL.predict
+summary(g1W)
+# Look at the histogram of PS
+hist(g1W)
+# Look at the histogram of the weights. 
+hist(1/g1W)
+```
+
+For any real analysis, you must satisfy yourself that the positivity assumption holds, so that the weights are not "too" large. 
+
+Now the probability of being unexposed
+```{r, include = TRUE, echo = TRUE}
+g0W<- 1- g1W
+```
+
+We can now use these quantities to estimate the mean of the potential outcomes, and thus, the ATE, based on the IF shown in the lecture.  
+The IF  for the AIPW of the Y^1 and the Y^0 can be written 
+```{r, include = TRUE, echo = TRUE}
+IF.1<-((data$A/g1W)*(data$Y-Q[,"Q1W"])+Q[,"Q1W"])
+IF.0<-(((1-data$A)/g0W)*(data$Y-Q[,"Q0W"])+Q[,"Q0W"])
+#The IF of the ATE is then
+IF<-IF.1-IF.0
+```
+
+
+We saw that the estimating eq. estimator of ATE=mean(IF) 
+```{r, include = TRUE, message=F, warning=FALSE, echo = TRUE}
+
+aipw.1<-mean(IF.1);aipw.0<-mean(IF.0)
+aipw.manual<-aipw.1-aipw.0
+```
+We now now that this estimator is asymp Normally distributed 
+and its variance is var(IF)/n
+```{r, include = TRUE, echo = TRUE}
+ci.lb<-mean(IF)-qnorm(.975)*sd(IF)/sqrt(length(IF))
+ci.ub<-mean(IF)+qnorm(.975)*sd(IF)/sqrt(length(IF))
+ res.manual.aipw<-c(aipw.manual,ci.lb, ci.ub)
+res.manual.aipw
+```
+
+### AIPW using the package npcausal
+Now that you see how the concept works, you can use the npcausal package, which has pre-programed this, and other estimands.
+
+For now,  we specify no sample splitting 
+```{r, include = TRUE, echo = TRUE}
+library(npcausal)
+aipw<- ate(y=Y, a=A, x=W, nsplits=1, sl.lib=c("SL.glm", "SL.glm.interaction", "SL.glmnet", "SL.ranger"))
+```
+
+```{r, include = TRUE, echo = TRUE}
+aipw$res
+```
+
+
+
+## TMLE 
+
+We now move on to the TMLE for the ATE. 
+Using the following code you can implement a tmle by hand, based on the clever covariate approach you saw on the first session
+
+```{r, include = TRUE, echo = TRUE}
+# First E(Y1)
+#' Constructing the clever covariate
+H<-as.numeric(data$A/g1W)
+```
+We now fit a parametric model, with the clever covariate the only explanatory variable, and using the initial outcome predictions as an offset    
+```{r, include = TRUE, echo = TRUE}
+model<-glm(data$Y~-1+H+offset(qlogis(Q[,"QAW"])),family=binomial)
+summary(model)
+```
+
+We update the initial predictions using the coefficient of the clever covariate
+```{r, include = TRUE, echo = TRUE}
+Q1W.1<-plogis(qlogis(Q[,"Q1W"])+coef(model)[1]/g1W)
+```
+
+And use this to get the TMLE estimate of the mean of Y^1
+```{r, include = TRUE, echo = TRUE}
+# Estimating E(Y1)
+mean(Q1W.1)
+```
+
+We now repeat for Y^0
+```{r, include = TRUE, echo = TRUE}
+# E(Y0)
+# Constructing the clever covariate
+H<-as.numeric((1-data$A)/g0W)
+# Fitting a parametric extension model
+model<-glm(data$Y~-1+H+offset(qlogis(Q[,"QAW"])),family=binomial)
+summary(model)
+# Updating the predictions
+Q0W.1<-plogis(qlogis(Q[,"Q0W"])+coef(model)[1]/g0W)
+# Estimating E(Y0)
+mean(Q0W.1)
+```
+
+And put together to get the TMLE for the ATE
+```{r, include = TRUE, echo = TRUE}
+# ATE = E(Y1)-E(Y0)
+TMLE.1 =mean(Q1W.1)-mean(Q0W.1)
+```
+
+You can do all of this automatically using the tmle package, which also has coded other estimands. Other TMLE packages exists for other common estimands, such as mediation, IV regression or longitudinal settings
+
+### TMLE using the R package
+```{r, include = TRUE, echo = TRUE}
+library(tmle)
+TMLE<- tmle(Y=data$Y,A=data$A,W=subset(data, select=-c(A,Y)), family="binomial", Q.SL.library=SL.library, g.SL.library=SL.library)
+
+TMLE$estimates$ATE
+```
+
+## Cross-fitting 
+
+It turns out that to remove further bias, while avoiding extra assumptions,  we should use sample splitting. Even better, we should use cross-fitting.
+This can be done relatively easily in the npcausal package
+```{r, include = T, echo = TRUE}
+aipw.2<- ate(y=Y, a=A, x=W, nsplits=10, sl.lib=c("SL.glm", "SL.glm.interaction", "SL.glmnet", "SL.ranger"))
+```
+
+```{r, include = TRUE, echo = TRUE}
+aipw.2$res
+```
+
+You should also check tmle3, the newest implmentation of TMLE, where the default option is to fit a CV-TMLE 
+https://tlverse.org/tlverse-handbook/tmle3.html
+
+## further reading
+
+Remember when doing your own analyses, to tune your learners. 
+To learn how to do this using the SL, visit https://cran.r-project.org/web/packages/SuperLearner/vignettes/Guide-to-SuperLearner.html
+
+
+
+
