@@ -1,8 +1,10 @@
 ---
 title: "Intro_CML_workshop"
-author: "Karla DiazOrdaz"
-date: "17/05/2021"
-output: html_document
+knit: (function(input_file, encoding) {
+  out_dir <- 'docs';
+  rmarkdown::render(input_file,
+ encoding=encoding,
+ output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
 ---
 
 ```{r setup, include=FALSE}
