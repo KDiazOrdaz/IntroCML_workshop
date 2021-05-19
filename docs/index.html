@@ -505,7 +505,7 @@ listWrappers(what = &quot;SL&quot;)</code></pre>
 ##     out &lt;- list(pred = pred, fit = fit)
 ##     return(out)
 ## }
-## &lt;bytecode: 0x7f90848369f0&gt;
+## &lt;bytecode: 0x7f8742b1c170&gt;
 ## &lt;environment: namespace:SuperLearner&gt;</code></pre>
 <p>We see that the number of trees is 500 and the number of variables to consider for each tree is the sqrt of the number of total independent variables (sqrt (dimW)) rounded down to the next lower interger.</p>
 </div>
@@ -828,10 +828,37 @@ TMLE$estimates$ATE</code></pre>
 ## 2      E{Y(1)} 0.7933503 0.01574690 0.7624863 0.8242142    0
 ## 3 E{Y(1)-Y(0)} 0.1979107 0.03190509 0.1353767 0.2604447    0</code></pre>
 <p>You should also check tmle3, the newest implmentation of TMLE, where the default option is to fit a CV-TMLE <a href="https://tlverse.org/tlverse-handbook/tmle3.html" class="uri">https://tlverse.org/tlverse-handbook/tmle3.html</a></p>
-</div>
-<div id="further-reading" class="section level2">
-<h2>further reading</h2>
 <p>Remember when doing your own analyses, to tune your learners. To learn how to do this using the SL, visit <a href="https://cran.r-project.org/web/packages/SuperLearner/vignettes/Guide-to-SuperLearner.html" class="uri">https://cran.r-project.org/web/packages/SuperLearner/vignettes/Guide-to-SuperLearner.html</a></p>
+</div>
+<div id="further-reading" class="section level1">
+<h1>Further reading</h1>
+<div id="causal-machine-learning" class="section level2">
+<h2>Causal machine learning</h2>
+<p>For more general reading on debiased machine learning and tmle, see</p>
+<ul>
+<li><p>van der Laan, M. J. and Rose, S. (2011). Targeted Learning. Springer Series in Statistics. Springer New York, New York, NY</p></li>
+<li><p>Chernozhukov, V., Chetverikov, D., Demirer, M., Dufflo, E., Hansen, C., Newey, W., and Robins, J. (2018). Double/debiased machine learning for treatment and structural parameters. The Econometrics Journal, 21(1):C1{ C68.</p></li>
+</ul>
+</div>
+<div id="influence-functions" class="section level2">
+<h2>Influence functions</h2>
+<ul>
+<li><p>Fisher, A., &amp; Kennedy, E. H. (2020). Visually communicating and teaching intuition for influence functions. The American Statistician, 1-11.</p></li>
+<li><p>Levy, J. (2019). Tutorial: Deriving The Efficient Influence Curve for Large Models. <a href="https://arxiv.org/abs/1903.01706" class="uri">https://arxiv.org/abs/1903.01706</a></p></li>
+<li><p>Ichimura, H. and Newey, W. K. (2015). The influence function of semiparametric estimators. arXiv preprint arXiv:1508.01378</p></li>
+</ul>
+</div>
+<div id="r-software-packages" class="section level2">
+<h2>R Software packages</h2>
+<ul>
+<li><p>Kennedy, Edward. Package npcausal <a href="https://github.com/ehkennedy/npcausal" class="uri">https://github.com/ehkennedy/npcausal</a></p></li>
+<li><p>Polley, E. C. and van der Laan, M. J. (2010) Super learner in prediction. U.C. Berkeley Division of Biostatistics Working Paper Series Working Paper 266. URL <a href="http://biostats.bepress.com/ucbbiostat/paper266" class="uri">http://biostats.bepress.com/ucbbiostat/paper266</a>.</p></li>
+<li><p>Naimi A and Balzer L. Stacked generalization: an introduction to super learning. European Journal of Epidemiology (2018) 33:459–464</p></li>
+<li><p>Gruber S, van der Laan MJ (2012). tmle: An R Package for Targeted Maximum Likelihood Estimation.” Journal of Statistical Software, 51(13), 1–35. <a href="doi:10.18637/jss.v051.i13" class="uri">doi:10.18637/jss.v051.i13</a>, <a href="http://www.jstatsoft.org/v51/i13/" class="uri">http://www.jstatsoft.org/v51/i13/</a>.</p></li>
+<li><p>Targeted learning software tlverse tutorials “The Hitchhiker’s Guide to the tlverse: A Targeted Learning Practitioner’s Handbook.” tmle3 newest implementation of TMLE, default version is to fit a CV-TMLE <a href="https://tlverse.org/tlverse-handbook/tmle3.html" class="uri">https://tlverse.org/tlverse-handbook/tmle3.html</a></p></li>
+<li><p>new superlearner sl3 <a href="https://tlverse.org/tlverse-handbook/sl3.html" class="uri">https://tlverse.org/tlverse-handbook/sl3.html</a></p></li>
+</ul>
+</div>
 </div>
 
 

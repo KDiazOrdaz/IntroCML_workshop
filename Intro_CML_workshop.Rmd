@@ -294,12 +294,14 @@ aipw.2$res
 You should also check tmle3, the newest implmentation of TMLE, where the default option is to fit a CV-TMLE 
 https://tlverse.org/tlverse-handbook/tmle3.html
 
-## Further reading
-
 Remember when doing your own analyses, to tune your learners. 
 To learn how to do this using the SL, visit https://cran.r-project.org/web/packages/SuperLearner/vignettes/Guide-to-SuperLearner.html
 
-# Causal machine learning 
+
+# Further reading
+
+
+## Causal machine learning 
 For more general reading on debiased machine learning and tmle, see
 
 * van der Laan, M. J. and Rose, S. (2011). Targeted Learning. Springer Series in Statistics. Springer New York,
@@ -310,7 +312,7 @@ Double/debiased machine learning for treatment and structural parameters. The Ec
 C68.
 
 
-# Influence functions
+## Influence functions
 
 * Fisher, A., & Kennedy, E. H. (2020). Visually communicating and
 teaching intuition for influence functions. The American Statistician,
@@ -325,7 +327,7 @@ The influence function of semiparametric estimators. arXiv preprint
 arXiv:1508.01378
 
 
-# R Software packages  
+## R Software packages  
 
 * Kennedy, Edward. Package npcausal https://github.com/ehkennedy/npcausal
 
@@ -346,5 +348,4 @@ tlverse: A Targeted Learning Practitioner’s Handbook.”
 tmle3 newest implementation of TMLE, default version is to fit a CV-TMLE
 https://tlverse.org/tlverse-handbook/tmle3.html
 
-also new superlearner sl3 
-https://tlverse.org/tlverse-handbook/sl3.html
+* new superlearner sl3  https://tlverse.org/tlverse-handbook/sl3.html
