@@ -304,6 +304,8 @@ To learn how to do this using the SL, visit https://cran.r-project.org/web/packa
 ## Causal machine learning 
 For more general reading on debiased machine learning and tmle, see
 
+* Kennedy, Edward. (2022) Semiparametric doubly robust targeted double machine learning: a review. https://arxiv.org/abs/2203.06469
+
 * van der Laan, M. J. and Rose, S. (2011). Targeted Learning. Springer Series in Statistics. Springer New York,
 New York, NY
 
@@ -314,22 +316,22 @@ C68.
 
 ## Influence functions
 
+* Hines, O;  Dukes, O;  Diaz-Ordaz, K & Vansteelandt, S (2022) Demystifying Statistical Learning Based on Efficient Influence Functions, The American Statistician, DOI: 10.1080/00031305.2021.2021984
+
+
 * Fisher, A., & Kennedy, E. H. (2020). Visually communicating and
 teaching intuition for influence functions. The American Statistician,
 1-11.
 
-* Levy, J. (2019). 
-Tutorial: Deriving The Efficient Influence Curve for Large Models.
-https://arxiv.org/abs/1903.01706
 
-* Ichimura, H. and Newey, W. K. (2015). 
-The influence function of semiparametric estimators. arXiv preprint
-arXiv:1508.01378
 
 
 ## R Software packages  
 
 * Kennedy, Edward. Package npcausal https://github.com/ehkennedy/npcausal
+
+* Zhong, Y; Kennedy, E; Bodnar, L; & Naimi, A. Package ‘AIPW’
+https://cran.r-project.org/web/packages/AIPW/index.html
 
 * Polley, E. C. and van der Laan, M. J. (2010) Super learner in prediction.
 U.C. Berkeley Division of Biostatistics Working Paper Series Working
